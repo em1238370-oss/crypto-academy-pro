@@ -6638,6 +6638,84 @@ function kroBuildSignalAccuracySummaryRu(stats) {
   return parts.join('; ') + '.';
 }
 
+/**
+ * Определяет: похож ли текст поста на торговый сигнал (быстрая эвристика).
+ * Используется чтобы не гонять Mistral на посты с новостями/мемами.
+ */
+function kroLooksLikeTradingSignalPost(text) {
+  const t = String(text || '').toLowerCase();
+  const signalWords = [
+    'лонг', 'шорт', 'long', 'short', 'buy', 'sell', 'вход', 'entry',
+    'цель', 'target', 'tp', 'тейк', 'стоп', 'stop', 'sl',
+    'сигнал', 'signal', 'открыл', 'купил', 'зашёл', 'entered',
+    'сделка', 'trade', 'позиция', 'position', 'биткоин', 'btc', 'eth', 'sol',
+  ];
+  const hits = signalWords.filter((w) => t.includes(w)).length;
+  return hits >= 2;
+}
+
+/**
+ * AI-парсинг торговых сигналов через Mistral для постов,
+ * где regex ничего не нашёл, но пост похож на сигнал.
+ * Возвращает массив [{symbol, side, entry, target, snippet}] или [].
+ */
+async function kroParseSignalsWithMistral(posts, deadline) {
+  const mistralKey = process.env.MISTRAL_API_KEY;
+  if (!mistralKey || deadline - Date.now() < 3000) return [];
+  const candidates = posts.filter((p) => kroLooksLikeTradingSignalPost(p.text)).slice(0, 6);
+  if (!candidates.length) return [];
+  const postsBlock = candidates.map((p, i) =>
+    `[Пост ${i + 1}${p.date_iso ? ', ' + p.date_iso.slice(0, 10) : ''}]${p.url ? ' ' + p.url : ''}\n${p.text}`
+  ).join('\n\n');
+  const prompt = `Ты анализируешь посты Telegram-канала с торговыми сигналами.
+Из каждого поста извлеки торговый сигнал если он есть.
+Сигнал — это конкретный призыв открыть сделку: монета, направление (лонг/шорт), цена входа или уровень.
+
+Ответь ТОЛЬКО JSON-массивом. Пример:
+[{"post_index":1,"symbol":"BTC","side":"long","entry":43000,"target":46000,"snippet":"первые 180 символов поста"},{"post_index":2,"symbol":"ETH","side":"short","entry":2800,"target":2600,"snippet":"..."}]
+
+Правила:
+- symbol: тикер монеты ЗАГЛАВНЫМИ буквами (BTC, ETH, SOL, PEPE и т.д.)
+- side: "long" или "short"
+- entry: цена входа числом, или null если не указана явно
+- target: цель числом, или null
+- snippet: первые 180 символов текста поста
+- Если в посте нет конкретного сигнала — не включай его в массив
+- Если нет ни одного сигнала — верни []
+
+Посты:
+${postsBlock}`;
+  try {
+    const r = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      { model: 'mistral-small-latest', messages: [{ role: 'user', content: prompt }], temperature: 0.1, max_tokens: 600 },
+      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mistralKey}` }, timeout: Math.min(8000, deadline - Date.now() - 500) },
+    );
+    const text = r.data?.choices?.[0]?.message?.content || '';
+    const arrMatch = text.match(/\[[\s\S]*\]/);
+    if (!arrMatch) return [];
+    const arr = JSON.parse(arrMatch[0]);
+    if (!Array.isArray(arr)) return [];
+    return arr.map((item) => {
+      const idx = Number(item.post_index) - 1;
+      const post = candidates[idx] || candidates[0];
+      return {
+        symbol: String(item.symbol || '').trim().toUpperCase(),
+        side: String(item.side || 'long').toLowerCase().includes('short') ? 'short' : 'long',
+        entry: item.entry != null ? Number(item.entry) || null : null,
+        target: item.target != null ? Number(item.target) || null : null,
+        snippet: String(item.snippet || (post && post.text) || '').slice(0, 180),
+        post_date: post && post.date_iso ? post.date_iso : null,
+        post_url: post && post.url ? post.url : null,
+        post_full_text: post && post.text ? post.text : '',
+        source: 'mistral',
+      };
+    }).filter((s) => s.symbol && s.symbol.length >= 2);
+  } catch {
+    return [];
+  }
+}
+
 async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
   const posts = Array.isArray(datedPosts) ? datedPosts : [];
   const postTexts = posts.map((p) => p.text).filter(Boolean);
@@ -6646,13 +6724,32 @@ async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
   const onlyProfitsTone = onlyProfitsFlag || (!warnsAboutLosses && postTexts.some((t) => /профит|прибыл|\+[\d]|\bx\d\b|закрыл в плюс|take profit|tp hit/i.test(String(t))));
 
   const found = [];
+  const seenPostUrls = new Set();
   for (const post of posts) {
     const signals = kroParseTradingSignalsFromText(post.text);
     for (const sig of signals) {
       found.push({
         ...sig,
         post_date: post.date_iso || null,
+        post_url: post.url || null,
+        post_full_text: String(post.text || '').trim(),
       });
+      if (post.url) seenPostUrls.add(post.url);
+    }
+  }
+
+  // AI-слой: Mistral парсит посты-сигналы, которые regex пропустил
+  if (deadline - Date.now() > 5000 && process.env.MISTRAL_API_KEY) {
+    const postsWithoutSignals = posts.filter(
+      (p) => !seenPostUrls.has(p.url) && kroLooksLikeTradingSignalPost(p.text)
+    );
+    if (postsWithoutSignals.length) {
+      try {
+        const aiSignals = await kroParseSignalsWithMistral(postsWithoutSignals, deadline - 1000);
+        for (const sig of aiSignals) {
+          if (sig.symbol) found.push(sig);
+        }
+      } catch { /* не блокируем основной пайплайн */ }
     }
   }
 
@@ -6707,10 +6804,11 @@ async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
       entry: sig.entry,
       target: sig.target,
       post_date: sig.post_date,
+      post_url: sig.post_url || null,
       price_at_signal: priceAt,
       price_after_7d: priceAfter7d,
       outcome,
-      snippet: sig.snippet,
+      snippet: sig.snippet || sig.post_full_text || '',
     });
     if (deadline - Date.now() < 300) break;
   }

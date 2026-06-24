@@ -3644,24 +3644,31 @@
                                    var pnlCls = pnlPct >= 0 ? 'kro-sig-pnl--pos' : 'kro-sig-pnl--neg';
                                    pnlHtml = '<span class="kro-sig-pnl ' + pnlCls + '">' + esc(pnlSign + pnlPct.toFixed(1) + '%') + ' за 7 дн.</span>';
                                }
+                               var postUrl = String(it.post_url || '').trim();
+                               var datePart = dateStr
+                                   ? (postUrl
+                                       ? '<a class="kro-sig-card-date" href="' + esc(postUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(dateStr) + ' ↗</a>'
+                                       : '<span class="kro-sig-card-date">' + esc(dateStr) + '</span>')
+                                   : '';
                                return (
                                    '<div class="kro-sig-card ' + sideCls + '">' +
                                    '<div class="kro-sig-card-head">' +
                                    '<span class="kro-sig-card-coin">' + esc(it.symbol || '—') + '</span>' +
                                    '<span class="kro-sig-card-side">' + sideLabel + '</span>' +
-                                   (dateStr ? '<span class="kro-sig-card-date">' + esc(dateStr) + '</span>' : '') +
                                    '<span class="kro-sig-card-outcome ' + outcomeCls + '">' + outcomeIcon + ' ' + outcomeLabel + '</span>' +
+                                   datePart +
                                    '</div>' +
                                    '<div class="kro-sig-card-prices">' +
                                    '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Вход</span><span class="kro-sig-price-val">' + esc(entry) + '</span></div>' +
                                    '<span class="kro-sig-arrow">→</span>' +
                                    '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цена на сигнал</span><span class="kro-sig-price-val">' + esc(priceAt) + '</span></div>' +
                                    '<span class="kro-sig-arrow">→</span>' +
-                                   '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цена +7 дн.</span><span class="kro-sig-price-val">' + esc(priceAfter) + '</span></div>' +
+                                   '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Через 7 дней</span><span class="kro-sig-price-val">' + esc(priceAfter) + '</span></div>' +
                                    (target !== '—' ? '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цель</span><span class="kro-sig-price-val">' + esc(target) + '</span></div>' : '') +
                                    pnlHtml +
                                    '</div>' +
                                    (quote ? '<p class="kro-sig-card-quote">«' + esc(quote) + '»</p>' : '') +
+                                   (postUrl ? '<a class="kro-sig-card-post-link" href="' + esc(postUrl) + '" target="_blank" rel="noopener noreferrer">Открыть пост в Telegram ↗</a>' : '') +
                                    '</div>'
                                );
                            }).join('');

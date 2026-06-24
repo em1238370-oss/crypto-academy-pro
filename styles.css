@@ -10449,65 +10449,114 @@ body.kro-main::after {
 
 /* Карточки сигналов в Подробнее */
 .kro-sig-card {
-   padding: 12px;
-   border-radius: 12px;
+   padding: 14px;
+   border-radius: 14px;
    border: 1px solid rgba(255,255,255,0.08);
-   background: rgba(255,255,255,0.03);
+   background: rgba(15,20,35,0.55);
+   backdrop-filter: blur(12px);
+   -webkit-backdrop-filter: blur(12px);
    margin-bottom: 10px;
+   transition: border-color 0.2s;
 }
-.kro-sig-card--long { border-left: 3px solid rgba(34,197,94,0.5); }
-.kro-sig-card--short { border-left: 3px solid rgba(239,68,68,0.5); }
+.kro-sig-card:hover { border-color: rgba(255,255,255,0.16); }
+.kro-sig-card--long { border-left: 3px solid rgba(16,185,129,0.6); }
+.kro-sig-card--short { border-left: 3px solid rgba(239,68,68,0.6); }
 .kro-sig-card-head {
    display: flex;
    align-items: center;
    flex-wrap: wrap;
    gap: 6px;
-   margin-bottom: 8px;
+   margin-bottom: 10px;
 }
 .kro-sig-card-coin {
-   font-size: 1rem;
+   font-size: 1.05rem;
    font-weight: 800;
    color: #fff;
+   letter-spacing: 0.03em;
 }
 .kro-sig-card-side {
-   font-size: 0.68rem;
+   font-size: 0.65rem;
    font-weight: 700;
-   padding: 2px 7px;
+   padding: 3px 8px;
    border-radius: 6px;
-   background: rgba(255,255,255,0.1);
-   color: rgba(255,255,255,0.7);
-   letter-spacing: 0.05em;
+   background: rgba(255,255,255,0.09);
+   color: rgba(255,255,255,0.65);
+   letter-spacing: 0.07em;
+   text-transform: uppercase;
 }
-.kro-sig-card-date { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-left: auto; }
-.kro-sig-card-outcome { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
-.kro-sig-card-outcome--hit { background: rgba(34,197,94,0.15); color: #86efac; }
-.kro-sig-card-outcome--loss { background: rgba(239,68,68,0.15); color: #fca5a5; }
-.kro-sig-card-outcome--muted { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
-.kro-sig-card-prices {
-   display: flex;
-   align-items: center;
-   flex-wrap: wrap;
-   gap: 6px;
-   margin-bottom: 6px;
-}
-.kro-sig-price-block { display: flex; flex-direction: column; }
-.kro-sig-price-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); line-height: 1.2; }
-.kro-sig-price-val { font-size: 0.85rem; font-weight: 700; color: #fff; }
-.kro-sig-arrow { font-size: 0.8rem; color: rgba(255,255,255,0.25); }
-.kro-sig-pnl {
-   font-size: 0.8rem;
-   font-weight: 700;
-   padding: 2px 8px;
-   border-radius: 6px;
+.kro-sig-card--long .kro-sig-card-side { background: rgba(16,185,129,0.14); color: #6ee7b7; }
+.kro-sig-card--short .kro-sig-card-side { background: rgba(239,68,68,0.14); color: #fca5a5; }
+.kro-sig-card-date {
+   font-size: 0.72rem;
+   color: rgba(255,255,255,0.35);
    margin-left: auto;
 }
-.kro-sig-pnl--pos { background: rgba(34,197,94,0.12); color: #86efac; }
+.kro-sig-card-date a {
+   color: inherit;
+   text-decoration: none;
+   border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.kro-sig-card-date a:hover { color: rgba(255,255,255,0.7); }
+.kro-sig-card-outcome {
+   font-size: 0.72rem;
+   font-weight: 700;
+   padding: 3px 9px;
+   border-radius: 999px;
+   letter-spacing: 0.04em;
+}
+.kro-sig-card-outcome--hit { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.kro-sig-card-outcome--loss { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.kro-sig-card-outcome--muted { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
+.kro-sig-card-prices {
+   display: flex;
+   align-items: flex-end;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin-bottom: 8px;
+   padding: 10px 12px;
+   border-radius: 10px;
+   background: rgba(255,255,255,0.03);
+   border: 1px solid rgba(255,255,255,0.05);
+}
+.kro-sig-price-block { display: flex; flex-direction: column; min-width: 52px; }
+.kro-sig-price-label {
+   font-size: 0.6rem;
+   color: rgba(255,255,255,0.35);
+   text-transform: uppercase;
+   letter-spacing: 0.06em;
+   line-height: 1.2;
+   margin-bottom: 2px;
+}
+.kro-sig-price-val { font-size: 0.88rem; font-weight: 700; color: #e2e8f0; }
+.kro-sig-arrow { font-size: 0.75rem; color: rgba(255,255,255,0.2); align-self: center; }
+.kro-sig-pnl {
+   font-size: 0.82rem;
+   font-weight: 700;
+   padding: 3px 9px;
+   border-radius: 8px;
+   margin-left: auto;
+   align-self: center;
+}
+.kro-sig-pnl--pos { background: rgba(16,185,129,0.12); color: #6ee7b7; }
 .kro-sig-pnl--neg { background: rgba(239,68,68,0.12); color: #fca5a5; }
 .kro-sig-card-quote {
    font-size: 0.78rem;
-   color: rgba(148,163,184,0.8);
-   border-left: 2px solid rgba(255,255,255,0.1);
-   padding-left: 8px;
+   color: rgba(148,163,184,0.7);
+   border-left: 2px solid rgba(255,255,255,0.08);
+   padding-left: 10px;
    margin: 4px 0 0;
-   line-height: 1.4;
+   line-height: 1.5;
+   font-style: italic;
 }
+.kro-sig-card-post-link {
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+   margin-top: 8px;
+   font-size: 0.72rem;
+   color: rgba(99,179,237,0.8);
+   text-decoration: none;
+   border-bottom: 1px solid rgba(99,179,237,0.25);
+   transition: color 0.2s;
+}
+.kro-sig-card-post-link:hover { color: #90cdf4; }
